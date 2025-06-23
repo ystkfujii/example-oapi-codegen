@@ -87,7 +87,7 @@ func TestPostUser(t *testing.T) {
 				Age: 16, // Maximum is 15
 			},
 			expectedStatus: http.StatusBadRequest,
-			expectedError:  "\"number must be at most 15\"\n",
+			expectedError:  "{\"code\":400,\"details\":\"number must be at most 15\",\"message\":\"Invalid format\"}",
 		},
 		{
 			name: "invalid first name - contains numbers",
@@ -99,7 +99,7 @@ func TestPostUser(t *testing.T) {
 				Age: 10,
 			},
 			expectedStatus: http.StatusBadRequest,
-			expectedError:  "\"string doesn't match the regular expression \\\"^[a-zA-Z]+$\\\"\"\n",
+			expectedError:  "{\"code\":400,\"details\":\"string doesn't match the regular expression \\\"^[a-zA-Z]+$\\\"\",\"message\":\"Invalid format\"}",
 		},
 		{
 			name: "invalid first name - empty",
@@ -111,7 +111,7 @@ func TestPostUser(t *testing.T) {
 				Age: 10,
 			},
 			expectedStatus: http.StatusBadRequest,
-			expectedError:  "\"minimum string length is 1\"\n",
+			expectedError:  "{\"code\":400,\"details\":\"minimum string length is 1\",\"message\":\"Invalid format\"}",
 		},
 		{
 			name: "invalid first name - too long",
@@ -123,7 +123,7 @@ func TestPostUser(t *testing.T) {
 				Age: 10,
 			},
 			expectedStatus: http.StatusBadRequest,
-			expectedError:  "\"maximum string length is 100\"\n",
+			expectedError:  "{\"code\":400,\"details\":\"maximum string length is 100\",\"message\":\"Invalid format\"}",
 		},
 		{
 			name: "missing last name",
@@ -135,7 +135,7 @@ func TestPostUser(t *testing.T) {
 				Age: 10,
 			},
 			expectedStatus: http.StatusBadRequest,
-			expectedError:  "\"minimum string length is 1\"\n",
+			expectedError:  "{\"code\":400,\"details\":\"minimum string length is 1\",\"message\":\"Invalid format\"}",
 		},
 	}
 
@@ -154,9 +154,22 @@ func TestPostUser(t *testing.T) {
 			}
 
 			if tt.expectedError != "" {
-				responseBody := rec.Body.String()
-				if responseBody != tt.expectedError {
-					t.Errorf("Expected response '%s', got: %s", tt.expectedError, responseBody)
+				var expectedErrorResp api.Error
+				if err := json.Unmarshal([]byte(tt.expectedError), &expectedErrorResp); err != nil {
+					t.Fatalf("Failed to unmarshal expected error: %v", err)
+				}
+
+				var actualErrorResp api.Error
+				if err := json.Unmarshal(rec.Body.Bytes(), &actualErrorResp); err != nil {
+					t.Fatalf("Failed to unmarshal actual error response: %v", err)
+				}
+
+				if actualErrorResp.Code != expectedErrorResp.Code || 
+				   actualErrorResp.Message != expectedErrorResp.Message || 
+				   (actualErrorResp.Details == nil && expectedErrorResp.Details != nil) ||
+				   (actualErrorResp.Details != nil && expectedErrorResp.Details == nil) ||
+				   (actualErrorResp.Details != nil && expectedErrorResp.Details != nil && *actualErrorResp.Details != *expectedErrorResp.Details) {
+					t.Errorf("Expected error response %+v, got %+v", expectedErrorResp, actualErrorResp)
 				}
 			}
 

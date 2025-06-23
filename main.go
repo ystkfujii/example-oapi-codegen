@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"net/http"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/labstack/echo/v4"
@@ -25,9 +24,9 @@ func customErrorHandler(ctx echo.Context, err *echo.HTTPError) error {
 	e := rootError(err)
 	var sErr *openapi3.SchemaError
 	if errors.As(e, &sErr) {
-		return ctx.JSON(http.StatusBadRequest, sErr.Reason)
+		return ReturnFormatError(ctx, sErr.Reason)
 	}
-	return ctx.JSON(http.StatusBadRequest, "not according to the api specification")
+	return ReturnFormatError(ctx, "not according to the api specification")
 }
 
 func main() {

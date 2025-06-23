@@ -43,7 +43,7 @@ func (s *Server) PostUsers(ctx echo.Context) error {
 
 	var newUser api.NewUser
 	if err := ctx.Bind(&newUser); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "Invalid request body")
+		return ReturnInvalidRequestBodyError(ctx, err)
 	}
 
 	user, err := userConv.ToDomainUser(api.User{
@@ -52,7 +52,7 @@ func (s *Server) PostUsers(ctx echo.Context) error {
 		Age:  newUser.Age,
 	})
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+		return ReturnInvalidUserDataError(ctx, err)
 	}
 
 	s.usersMux.Lock()
@@ -71,7 +71,7 @@ func (s *Server) GetUsersId(ctx echo.Context, id int) error {
 
 	user, exists := s.users[id]
 	if !exists {
-		return echo.NewHTTPError(http.StatusNotFound, "User not found")
+		return ReturnUserNotFoundError(ctx, id)
 	}
 
 	return ctx.JSON(http.StatusOK, userConv.ToOpenAPIUser(user))
@@ -83,7 +83,7 @@ func (s *Server) DeleteUsersId(ctx echo.Context, id int) error {
 	defer s.usersMux.Unlock()
 
 	if _, exists := s.users[id]; !exists {
-		return echo.NewHTTPError(http.StatusNotFound, "User not found")
+		return ReturnUserNotFoundError(ctx, id)
 	}
 
 	delete(s.users, id)

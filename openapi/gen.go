@@ -18,6 +18,18 @@ import (
 	"github.com/oapi-codegen/runtime"
 )
 
+// Error defines model for Error.
+type Error struct {
+	// Code HTTP status code
+	Code int `json:"code"`
+
+	// Details Additional error details
+	Details *string `json:"details,omitempty"`
+
+	// Message Error message
+	Message string `json:"message"`
+}
+
 // Name defines model for Name.
 type Name struct {
 	First  string  `json:"first"`
@@ -150,17 +162,20 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/8SUW0/bMBTHv4p1xtuSNinwsLzBkKZOCCFNvAwxycSnqVF8wXagXZXvPvmkt7RbN6ZO",
-	"60uc2Ofy//l/uoDSKGs06uChWIAvp6g4LW+4wvi0zlh0QSJ9nUjnQ1zgjCtbIxRwaR4hAcVn16irMIUi",
-	"z7IElNTr9wQsDwGdhgK+3fP0+0X69eH9CSQQ5jam8MFJXUGbQM13039RMkyPV0BJIWrsl/h8rPRtAg6f",
-	"G+lQQHG/hLUU9bA+bR6fsIzfZ6nhVqalEVihTnEWHE8Dr4h04FUOBbzwusE8luLVaPU+olI3+Hrn0e1f",
-	"Eq/6AkfnpE+qRkGRn5O47iVbNyV1wApdRKSXN3/icAIFvBtuPDJcGmRI7tjVS4EJld9T2ybwZ82evqlX",
-	"KXrB+VbwB/ptJciPKlYKSA4rjhFST0xML9CXTtogTTTRBfMyNsykThUq4+bs4nbMJsYxxTWvpK5Y49H5",
-	"Qbx4GcilEV88Bgm8oPNdpnyQDbKow1jU3Eoo4HSQDU6BPDslwkNKFVcV0nBF/Dy2MhZQwCcMd3Qg6vPW",
-	"aN9dzCjL4qM0OqCmOG5tLUuKHD75WH/1jxFXMqDyv0NJHmjXqLhzfN6R6hO6lj4wM+koEHvfKMXdvGuY",
-	"8bpe7SVgjf+Jrlvjt4Q9N+jDpRHzN2k66Irl+LV9ZwTXYLuHMj9a2U3NPrGPDnlAQVR2gHVbjDONr5v9",
-	"zhbDhRRt59AaA+5jvKLvBHIsyFaOKwzkqPsFyFg7Wm01DUU3GX0gyZa4Q/PYPuyRO9sfH5qErl8R7//s",
-	"l4e0CWxiGi12iHSiGCca7HHOxlcx0cH5+C/qs3/uG+K0ZPQ3KGkaexzbtv0RAAD//2DeK21YCAAA",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
